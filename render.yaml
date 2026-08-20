@@ -4,7 +4,7 @@
 services:
   - type: web
     name: line-reminder-bot
-    env: docker
+    runtime: docker
     plan: starter
     # 关掉自动部署,避免每次 push 代码就重新上线打断正在跑的机器人;
     # 想要自动部署可以自己在 Render 控制台里开启
