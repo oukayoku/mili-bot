@@ -5,7 +5,7 @@
 // client.pushMessage(to, messages),都是位置参数,不是对象参数。
 
 const { Client, middleware } = require("@line/bot-sdk");
-const { runConversationTurn } = require("./claude");
+const { runConversationTurn, generateProactiveMessage } = require("./claude");
 const db = require("./db");
 
 const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
@@ -70,7 +70,83 @@ async function getDisplayName({ chatType, chatId, userId }) {
   return null;
 }
 
+// 自我介绍配图放在 public/ 目录下,由 server.js 里的 express.static 提供访问。
+// LINE 要求图片消息必须是公网 https 链接,所以要用部署平台给的对外网址拼出来。
+// Render 会自动注入 RENDER_EXTERNAL_URL(服务的公网地址);如果以后换到别的平台
+// 自己部署,没有这个变量的话,可以在环境变量里手动设置 PUBLIC_BASE_URL 来代替。
+function getPublicBaseUrl() {
+  const base = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_BASE_URL || "";
+  return base.replace(/\/$/, "");
+}
+
+function buildIntroImageMessage() {
+  const base = getPublicBaseUrl();
+  if (!base) return null; // 拿不到公网地址就不发图,只发文字,不让整个介绍流程报错
+  return {
+    type: "image",
+    originalContentUrl: `${base}/mili-intro.png`,
+    previewImageUrl: `${base}/mili-intro-preview.jpg`,
+  };
+}
+
+// 被添加为好友时(LINE 的 follow 事件),主动发一条自我介绍(文字 + 配图)
+async function handleFollow(event) {
+  const { chatId, chatType } = resolveChat(event);
+  if (!chatId) return;
+
+  db.ensureChatSettings(chatId, chatType);
+
+  const userId = event.source.userId || null;
+  const userDisplayName = await getDisplayName({ chatType, chatId, userId });
+
+  try {
+    const introText = await generateProactiveMessage({
+      chatId,
+      chatType,
+      kind: "intro",
+      extra: { userDisplayName },
+    });
+    const messages = [{ type: "text", text: introText.slice(0, 4900) }];
+    const imageMessage = buildIntroImageMessage();
+    if (imageMessage) messages.push(imageMessage);
+    await client.replyMessage(event.replyToken, messages);
+  } catch (err) {
+    console.error("生成自我介绍出错(follow):", err);
+  }
+}
+
+// 被拉进群聊/多人聊天室时(LINE 的 join 事件),主动发一条自我介绍(文字 + 配图)
+async function handleJoin(event) {
+  const { chatId, chatType } = resolveChat(event);
+  if (!chatId) return;
+
+  db.ensureChatSettings(chatId, chatType);
+
+  try {
+    const introText = await generateProactiveMessage({
+      chatId,
+      chatType,
+      kind: "intro_group",
+      extra: { requireMention: GROUP_REQUIRE_MENTION },
+    });
+    const messages = [{ type: "text", text: introText.slice(0, 4900) }];
+    const imageMessage = buildIntroImageMessage();
+    if (imageMessage) messages.push(imageMessage);
+    await client.replyMessage(event.replyToken, messages);
+  } catch (err) {
+    console.error("生成自我介绍出错(join):", err);
+  }
+}
+
 async function handleEvent(event) {
+  if (event.type === "follow") {
+    await handleFollow(event);
+    return;
+  }
+  if (event.type === "join") {
+    await handleJoin(event);
+    return;
+  }
   if (event.type !== "message" || event.message.type !== "text") {
     return; // 目前只处理文字消息,贴图/图片等先忽略
   }

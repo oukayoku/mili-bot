@@ -3,6 +3,7 @@
 
 require("dotenv").config();
 
+const path = require("path");
 const express = require("express");
 const { lineMiddleware, handleEvent } = require("./line");
 const { startScheduler } = require("./scheduler");
@@ -27,6 +28,12 @@ const app = express();
 app.get("/", (req, res) => {
   res.status(200).send("LINE reminder bot is running.");
 });
+
+// 静态资源(比如自我介绍配图),放在项目根目录的 public/ 文件夹里,
+// 部署后可以通过 https://<你的服务地址>/mili-intro.png 这样的链接访问到。
+// LINE 发图片消息必须给一个公网可访问的 https 链接,不能直接传本地文件,
+// 所以需要先把图片"挂"在这个服务自己身上,再把这个链接告诉 LINE。
+app.use(express.static(path.join(__dirname, "..", "public")));
 
 // LINE webhook:注意 lineMiddleware 需要拿到原始请求体做签名校验,
 // 所以这里不要在它之前挂载 express.json() 之类的 body parser。
