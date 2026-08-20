@@ -23,7 +23,7 @@ services:
       - key: BOT_NAME
         value: 米粒
       - key: BOT_BREED
-        value: 比熊
+        value: ビションフリーゼ
       - key: BOT_STORY
         sync: false
       - key: BOT_PERSONA
