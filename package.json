@@ -1,0 +1,24 @@
+{
+  "name": "line-reminder-bot",
+  "version": "1.0.0",
+  "description": "一个可以加为好友或拉进群聊的 LINE 机器人:每日提醒事项管理 + 基于 Claude 的个性化对话",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@line/bot-sdk": "^7.7.0",
+    "better-sqlite3": "^11.5.0",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "node-cron": "^3.0.3"
+  },
+  "license": "MIT"
+}

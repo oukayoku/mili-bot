@@ -1,0 +1,46 @@
+# Render 一键部署蓝图
+# 用法见 README.md 里的 "Deploy to Render" 按钮。
+# 部署时 Render 会自动提示填写下面标了 sync:false 的密钥类字段。
+services:
+  - type: web
+    name: line-reminder-bot
+    env: docker
+    plan: starter
+    # 关掉自动部署,避免每次 push 代码就重新上线打断正在跑的机器人;
+    # 想要自动部署可以自己在 Render 控制台里开启
+    autoDeploy: false
+    envVars:
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CLAUDE_MODEL
+        value: claude-sonnet-4-5-20250929
+      - key: TIMEZONE
+        value: Asia/Tokyo
+      - key: BOT_NAME
+        value: 米粒
+      - key: BOT_BREED
+        value: 比熊
+      - key: BOT_STORY
+        sync: false
+      - key: BOT_PERSONA
+        sync: false
+      - key: MI_LI_ACTIVITIES
+        sync: false
+      - key: NIGHT_NAG_STYLE
+        value: gentle
+      - key: SPONTANEOUS_HOURLY_PROBABILITY
+        value: "0.18"
+      - key: SPONTANEOUS_MIN_GAP_HOURS
+        value: "3"
+      - key: GROUP_REQUIRE_MENTION
+        value: "true"
+      - key: DB_PATH
+        value: /data/bot.db
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
